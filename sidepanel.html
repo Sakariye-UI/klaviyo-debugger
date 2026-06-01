@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klaviyo Flow Debugger</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Layout ── */
+    .content-wrapper { display:flex; flex:1; overflow:hidden; min-height:0; }
+    .side-nav { width:42px; min-width:42px; display:flex; flex-direction:column; align-items:center; padding:8px 0; gap:4px; border-right:1px solid var(--border); background:var(--bg); }
+    .nav-btn { width:34px; height:34px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; transition:background .15s,opacity .15s; opacity:.42; }
+    .nav-btn:hover { background:var(--border); opacity:1; }
+    .nav-btn.active { background:rgba(62,207,160,.13); opacity:1; }
+    .page { display:none; flex:1; overflow-y:auto; overflow-x:hidden; }
+    .page.active { display:block; }
+
+    /* ── IKB notice ── */
+    .ikb-notice { margin:10px 12px 0; padding:6px 10px; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:7px; }
+    .ikb-notice-icon { width:14px; height:14px; flex-shrink:0; opacity:.55; }
+    .ikb-notice a { color:var(--accent,#3ECFA0); text-decoration:none; font-weight:600; white-space:nowrap; }
+    .ikb-notice a:hover { text-decoration:underline; }
+
+    /* ── Articles page ── */
+    .articles-page { padding:12px 14px 24px; }
+    .page-back-btn { display:inline-flex; align-items:center; gap:5px; background:none; border:none; color:var(--text-secondary); font-size:12px; cursor:pointer; padding:0 0 14px; }
+    .page-back-btn:hover { color:var(--text); }
+    .articles-page h2 { font-size:14px; font-weight:700; color:var(--text); margin:0 0 16px; }
+    .articles-category { margin-bottom:18px; }
+    .articles-category-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary); padding-bottom:6px; border-bottom:1px solid var(--border); margin-bottom:8px; }
+    .article-link-item { display:block; padding:6px 10px; margin-bottom:3px; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-size:12px; color:var(--accent,#3ECFA0); text-decoration:none; line-height:1.4; transition:border-color .12s,background .12s; }
+    .article-link-item:hover { background:rgba(62,207,160,.07); border-color:rgba(62,207,160,.5); }
+
+    /* ── Report page ── */
+    .report-page { padding:12px 14px 24px; }
+    .report-page h2 { font-size:14px; font-weight:700; color:var(--text); margin:0 0 4px; }
+    .report-page > p { font-size:12px; color:var(--text-secondary); margin:0 0 16px; }
+    .report-type-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .report-type-btn { padding:5px 12px; border:1px solid var(--border); background:var(--surface); border-radius:20px; font-size:12px; color:var(--text-secondary); cursor:pointer; transition:all .12s; white-space:nowrap; }
+    .report-type-btn.active { border-color:var(--accent,#3ECFA0); color:var(--accent,#3ECFA0); background:rgba(62,207,160,.08); }
+    .report-field-label { font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:5px; display:block; }
+    .report-subject-input { width:100%; padding:8px 10px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:12px; font-family:inherit; box-sizing:border-box; margin-bottom:10px; }
+    .report-subject-input:focus { outline:none; border-color:var(--accent,#3ECFA0); }
+    .report-textarea { width:100%; min-height:110px; padding:8px 10px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:12px; font-family:inherit; resize:vertical; box-sizing:border-box; margin-bottom:12px; }
+    .report-textarea:focus { outline:none; border-color:var(--accent,#3ECFA0); }
+    .report-submit-btn { width:100%; padding:10px; background:var(--accent,#3ECFA0); color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .15s; }
+    .report-submit-btn:hover { opacity:.88; }
+    .report-success { display:none; padding:12px; background:rgba(62,207,160,.08); border:1px solid rgba(62,207,160,.4); border-radius:6px; font-size:12px; color:var(--text); text-align:center; margin-top:10px; line-height:1.5; }
+
+    /* ── Settings page ── */
+    .settings-page { padding:12px 14px 24px; }
+    .settings-page h2 { font-size:14px; font-weight:700; color:var(--text); margin:0 0 20px; }
+    .settings-section { margin-bottom:24px; }
+    .settings-section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary); padding-bottom:7px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .theme-options { display:flex; gap:10px; }
+    .theme-option { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 8px 10px; border:2px solid var(--border); border-radius:10px; background:var(--surface); cursor:pointer; transition:border-color .15s, background .15s; }
+    .theme-option:hover { border-color:rgba(62,207,160,.5); }
+    .theme-option.active { border-color:#3ECFA0; background:rgba(62,207,160,.06); }
+    .theme-preview { width:64px; height:46px; border-radius:6px; overflow:hidden; border:1px solid rgba(0,0,0,.18); flex-shrink:0; }
+    /* dark preview */
+    .tp-dark { background:#0d1117; }
+    .tp-dark .tp-hdr { height:12px; background:#161b22; border-bottom:1px solid #30363d; }
+    .tp-dark .tp-bd { padding:5px 5px; display:flex; flex-direction:column; gap:4px; }
+    .tp-dark .tp-ln { height:5px; border-radius:2px; background:#21262d; }
+    .tp-dark .tp-ln.s { width:60%; background:#1c2128; }
+    /* light preview */
+    .tp-light { background:linear-gradient(135deg,#e8f5f0 0%,#f0eeff 100%); }
+    .tp-light .tp-hdr { height:12px; background:rgba(255,255,255,.86); border-bottom:1px solid rgba(0,0,0,.08); }
+    .tp-light .tp-bd { padding:5px 5px; display:flex; flex-direction:column; gap:4px; }
+    .tp-light .tp-ln { height:5px; border-radius:2px; background:rgba(0,0,0,.1); }
+    .tp-light .tp-ln.s { width:60%; background:rgba(0,0,0,.06); }
+    .theme-option-label { font-size:12px; font-weight:600; color:var(--text); }
+    .theme-option-sub { font-size:10px; color:var(--text-secondary); }
+    .settings-meta { font-size:11px; color:var(--text-secondary); line-height:1.7; }
+    .settings-meta strong { color:var(--text); font-weight:600; }
+  </style>
+</head>
+<body data-theme="dark">
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-logo">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="16" fill="#3ECFA0"/>
+        <path d="M9 10h6.5a6.5 6.5 0 010 13H9V10z" fill="white"/>
+        <circle cx="19" cy="22" r="3" fill="white"/>
+      </svg>
+      <span class="header-title">Klaviyo Debugger</span>
+    </div>
+    <div class="header-right">
+      <div class="header-tools" id="toolBadges">
+        <!-- badges injected by JS -->
+      </div>
+      <!-- Theme toggle: shows moon in light mode, sun in dark mode -->
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <!-- Moon icon (visible in light mode) -->
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>
+        </svg>
+        <!-- Sun icon (visible in dark mode) -->
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="content-wrapper">
+
+    <!-- LEFT NAV -->
+    <nav class="side-nav">
+      <button class="nav-btn active" data-page="pageDiagnose" title="Diagnose">🏠</button>
+      <button class="nav-btn" data-page="pageArticles" title="KB Articles">📚</button>
+      <button class="nav-btn" data-page="pageReport" title="Report / Feedback">🐛</button>
+      <button class="nav-btn" data-page="pageSettings" title="Settings">⚙️</button>
+    </nav>
+
+    <!-- PAGE: DIAGNOSE -->
+    <div class="page active" id="pageDiagnose">
+
+      <!-- IKB NOTICE -->
+      <div class="ikb-notice">
+        <svg class="ikb-notice-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M8 7.5v3M8 5v.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <span>If more troubleshooting steps are needed <a href="#" id="ikbLink">→ IKB Article</a></span>
+      </div>
+
+  <!-- FORM SECTION -->
+  <section class="form-section" id="formSection">
+
+    <!-- STEP 1: WHAT ARE YOU INVESTIGATING -->
+    <div class="field-group">
+      <label class="field-label">What are you investigating?</label>
+      <div class="area-grid" id="areaGrid">
+        <button class="area-btn active" data-area="flows">
+          <span class="area-icon" data-tooltip="Flows">🔀</span>
+          <span>Profile didn't<br>enter flow</span>
+        </button>
+        <button class="area-btn" data-area="campaigns">
+          <span class="area-icon" data-tooltip="Campaigns">📣</span>
+          <span>Campaign<br>issue</span>
+        </button>
+        <button class="area-btn" data-area="lists_profiles">
+          <span class="area-icon" data-tooltip="Lists & Profiles">👤</span>
+          <span>List / Profile<br>change</span>
+        </button>
+        <button class="area-btn" data-area="billing">
+          <span class="area-icon" data-tooltip="Billing">💳</span>
+          <span>Billing /<br>auto-upgrade</span>
+        </button>
+        <button class="area-btn" data-area="forms">
+          <span class="area-icon" data-tooltip="Forms">📝</span>
+          <span>Form<br>change</span>
+        </button>
+        <button class="area-btn" data-area="push">
+          <span class="area-icon" data-tooltip="Push Consent">🔔</span>
+          <span>Push<br>consent</span>
+        </button>
+        <button class="area-btn" data-area="reviews">
+          <span class="area-icon" data-tooltip="Reviews">⭐</span>
+          <span>Reviews</span>
+        </button>
+        <button class="area-btn" data-area="integrations">
+          <span class="area-icon" data-tooltip="Integrations">🔗</span>
+          <span>Integrations</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── FLOWS ─────────────────────────────────────── -->
+    <div class="area-section" id="section-flows">
+      <div class="field-group">
+        <label class="field-label">Flow trigger type</label>
+        <div class="pill-group" id="triggerType">
+          <button class="pill active" data-value="metric">Metric</button>
+          <button class="pill" data-value="list_segment">List / Segment</button>
+          <button class="pill" data-value="date">Date</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="f_accountId">Account ID <span class="req">*</span></label>
+        <input class="field-input" id="f_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="f_flowId">Flow ID <span class="req">*</span></label>
+        <input class="field-input" id="f_flowId" placeholder="e.g. KHfDLT" autocomplete="off"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="f_profileId">Profile ID <span class="req" id="f_profileId_req" style="display:none">*</span><span id="f_profileId_opt" style="color:var(--text-secondary);font-weight:400"> (optional)</span></label>
+        <input class="field-input" id="f_profileId" placeholder="e.g. 01EHPHTFMK8P8WTRWCF3TG8BQA" autocomplete="off"/>
+        <span class="field-hint">For metric trigger: only needed to check per-message filters (Step 3). For list trigger: required.</span>
+      </div>
+
+      <div class="field-group flow-conditional metric-only">
+        <label class="field-label" for="f_activityId">Activity ID (Event ID) <span style="color:var(--text-secondary);font-weight:400">(optional)</span></label>
+        <input class="field-input" id="f_activityId" placeholder="From profile timeline" autocomplete="off"/>
+        <span class="field-hint">Profile timeline → click the event → "Activity ID"</span>
+      </div>
+
+      <div class="field-group flow-conditional metric-only">
+        <label class="field-label" for="f_flowMessageId">Flow Message ID <span class="opt">(optional)</span></label>
+        <input class="field-input" id="f_flowMessageId" placeholder="e.g. WiSmnq" autocomplete="off"/>
+        <span class="field-hint">Required for Step 3 (per-message filter check). Flow editor → click a message step → copy the ID from the URL or step settings. Leave blank to skip Step 3.</span>
+      </div>
+
+      <div class="field-group flow-conditional listseg-only" style="display:none">
+        <label class="field-label" for="f_listSegId">List or Segment ID <span class="req">*</span></label>
+        <input class="field-input" id="f_listSegId" placeholder="e.g. XpQA4t" autocomplete="off"/>
+      </div>
+
+      <div class="info-banner flow-conditional listseg-only" style="display:none">
+        <span>ℹ️</span>
+        Step 1 uses the <strong>Splunk List Trigger dashboard</strong>. Remaining steps run in Chronosphere.
+      </div>
+    </div>
+
+    <!-- ── CAMPAIGNS ──────────────────────────────────── -->
+    <div class="area-section" id="section-campaigns" style="display:none">
+      <div class="field-group">
+        <label class="field-label">What do you need to find?</label>
+        <div class="pill-group" id="campaignScenario">
+          <button class="pill active" data-value="created">Who created it?</button>
+          <button class="pill" data-value="deleted">Who deleted it?</button>
+          <button class="pill" data-value="skipped">Why was it skipped?</button>
+          <button class="pill" data-value="smart_sending">Smart Sending check</button>
+          <button class="pill" data-value="sms_failure">SMS send failure</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="c_accountId">Account ID <span class="req" id="c_accountId_req">*</span><span id="c_accountId_opt" style="display:none;color:var(--text-secondary);font-weight:400"> (optional)</span></label>
+        <input class="field-input" id="c_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="c_campaignId">Campaign ID <span class="req" id="c_campaignId_req">*</span><span id="c_campaignId_opt" style="display:none;color:var(--text-secondary);font-weight:400"> (optional)</span></label>
+        <input class="field-input" id="c_campaignId" placeholder="e.g. WiSmnq" autocomplete="off"/>
+      </div>
+      <div class="field-group camp-conditional skipped-only" style="display:none">
+        <label class="field-label" for="c_profileId">Profile ID</label>
+        <input class="field-input" id="c_profileId" placeholder="Optional — narrows results" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- ── LISTS & PROFILES ───────────────────────────── -->
+    <div class="area-section" id="section-lists_profiles" style="display:none">
+      <div class="field-group">
+        <label class="field-label">What do you need to check?</label>
+        <div class="pill-group" id="listScenario">
+          <button class="pill active" data-value="profile_deleted">Profile deleted</button>
+          <button class="pill" data-value="suppression">Profile suppression</button>
+          <button class="pill" data-value="optin_log">Opt-in setting log</button>
+          <button class="pill" data-value="segment_change">Segment definition change</button>
+          <button class="pill" data-value="list_merge">List merging log</button>
+        </div>
+      </div>
+
+      <!-- Suppression check selector — shown only when 'suppression' pill is active -->
+      <div id="suppressionChecks" class="suppression-checks" style="display:none">
+        <div class="suppression-checks-header">
+          <span class="suppression-checks-title">Which checks to run?</span>
+          <button class="supp-all-btn" id="suppSelectAll">Select all</button>
+        </div>
+        <label class="supp-check-item">
+          <input type="checkbox" class="supp-check" data-check="account_level" checked>
+          <div class="supp-check-body">
+            <span class="supp-check-name">Account-level suppression</span>
+            <span class="supp-check-needs">Needs: Account ID</span>
+          </div>
+        </label>
+        <label class="supp-check-item">
+          <input type="checkbox" class="supp-check" data-check="profile_manual">
+          <div class="supp-check-body">
+            <span class="supp-check-name">Profile manual suppression</span>
+            <span class="supp-check-needs">Needs: Profile ID</span>
+          </div>
+        </label>
+        <label class="supp-check-item">
+          <input type="checkbox" class="supp-check" data-check="who_suppressed">
+          <div class="supp-check-body">
+            <span class="supp-check-name">Who suppressed? <span class="supp-check-tag">post Oct 2025</span></span>
+            <span class="supp-check-needs">Needs: Account ID + Profile ID</span>
+          </div>
+        </label>
+        <label class="supp-check-item">
+          <input type="checkbox" class="supp-check" data-check="bulk">
+          <div class="supp-check-body">
+            <span class="supp-check-name">Bulk suppression</span>
+            <span class="supp-check-needs">Needs: Account ID</span>
+          </div>
+        </label>
+        <label class="supp-check-item">
+          <input type="checkbox" class="supp-check" data-check="existing_90day">
+          <div class="supp-check-body">
+            <span class="supp-check-name">90-day suppression window</span>
+            <span class="supp-check-needs">Needs: Account ID + Profile ID</span>
+          </div>
+        </label>
+        <label class="supp-check-item">
+          <input type="checkbox" class="supp-check" data-check="list_growth">
+          <div class="supp-check-body">
+            <span class="supp-check-name">List growth — suppressed profiles</span>
+            <span class="supp-check-needs">Needs: Account ID + List ID</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="field-group" id="l_accountId_group">
+        <label class="field-label" for="l_accountId">Account ID <span class="req" id="l_accountId_req">*</span><span id="l_accountId_opt" style="display:none;color:var(--text-secondary);font-weight:400"> (optional)</span></label>
+        <input class="field-input" id="l_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+      <div class="field-group" id="l_profileId_group">
+        <label class="field-label" for="l_profileId">Profile ID <span class="req" id="l_profileId_req" style="display:none">*</span><span id="l_profileId_opt" style="color:var(--text-secondary);font-weight:400"> (optional)</span></label>
+        <input class="field-input" id="l_profileId" placeholder="e.g. 01EHPHTFMK8P8WTRWCF3TG8BQA" autocomplete="off"/>
+      </div>
+      <div class="field-group" id="l_listId_group" style="display:none"><!-- was list-conditional list-only -->
+        <label class="field-label" for="l_listId">List ID <span id="l_listId_req" style="display:none;color:var(--red)">*</span><span id="l_listId_opt" style="color:var(--text-secondary);font-weight:400"> (optional)</span></label>
+        <input class="field-input" id="l_listId" placeholder="e.g. XpQA4t" autocomplete="off"/>
+      </div>
+      <div class="field-group" id="l_segmentId_group" style="display:none">
+        <label class="field-label" for="l_segmentId">Segment ID <span class="req">*</span></label>
+        <input class="field-input" id="l_segmentId" placeholder="e.g. XFJFtU" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- ── BILLING ─────────────────────────────────────── -->
+    <div class="area-section" id="section-billing" style="display:none">
+      <div class="field-group">
+        <label class="field-label">What do you need to check?</label>
+        <div class="pill-group" id="billingScenario">
+          <button class="pill active" data-value="auto_upgrade">Auto-upgrade</button>
+          <button class="pill" data-value="back_in_stock">Back in Stock min inventory</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="b_accountId">Account ID <span class="req">*</span></label>
+        <input class="field-input" id="b_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- ── FORMS ──────────────────────────────────────── -->
+    <div class="area-section" id="section-forms" style="display:none">
+      <div class="field-group">
+        <label class="field-label">What do you need to check?</label>
+        <div class="pill-group" id="formScenario">
+          <button class="pill active" data-value="set_draft">Set to draft — when?</button>
+          <button class="pill" data-value="deleted">Deleted — who?</button>
+          <button class="pill" data-value="published">Published / unpublished</button>
+        </div>
+      </div>
+      <div class="field-group" id="fm_accountId_group">
+        <label class="field-label" for="fm_accountId">Account ID <span class="req">*</span></label>
+        <input class="field-input" id="fm_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+      <div class="field-group" id="fm_formId_group">
+        <label class="field-label" for="fm_formId">Form ID <span class="req" id="fm_formId_req">*</span><span class="opt" id="fm_formId_opt" style="display:none"> (optional)</span></label>
+        <input class="field-input" id="fm_formId" placeholder="e.g. Wr4Nk2" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- ── PUSH ───────────────────────────────────────── -->
+    <div class="area-section" id="section-push" style="display:none">
+      <div class="field-group">
+        <label class="field-label" for="p_profileId">Profile ID <span class="req">*</span></label>
+        <input class="field-input" id="p_profileId" placeholder="e.g. 01EHPHTFMK8P8WTRWCF3TG8BQA" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- ── REVIEWS ────────────────────────────────────── -->
+    <div class="area-section" id="section-reviews" style="display:none">
+      <div class="field-group">
+        <label class="field-label">What do you need to check?</label>
+        <div class="pill-group" id="reviewScenario">
+          <button class="pill active" data-value="not_triggering">Not triggering (billing limit)</button>
+          <button class="pill" data-value="exported">Reviews exported by user</button>
+          <button class="pill" data-value="settings_change">Settings changes</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="r_accountId">Account ID <span class="req">*</span></label>
+        <input class="field-input" id="r_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- ── INTEGRATIONS ───────────────────────────────── -->
+    <div class="area-section" id="section-integrations" style="display:none">
+      <div class="field-group">
+        <label class="field-label" for="i_accountId">Account ID <span class="req">*</span></label>
+        <input class="field-input" id="i_accountId" placeholder="e.g. L4mrhR" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- TIME RANGE (shared) -->
+    <div class="field-group">
+      <label class="field-label">Time range</label>
+      <div class="time-range-picker">
+
+        <!-- Mode toggle: Relative vs Date range -->
+        <div class="time-mode-tabs">
+          <button class="time-mode-tab active" data-mode="relative">Relative</button>
+          <button class="time-mode-tab" data-mode="date">Date range</button>
+        </div>
+
+        <!-- RELATIVE controls -->
+        <div id="timeRelativeControls">
+
+          <!-- Slider row -->
+          <div class="time-slider-row">
+            <input type="range" id="timeSlider" min="0" max="100" step="0.1" value="54.5" class="time-slider" style="--fill:54.5%"/>
+            <span class="time-slider-label" id="timeSliderLabel">2 days</span>
+          </div>
+
+          <!-- Quick picks -->
+          <div class="time-quick-picks" id="timeQuickPicks">
+            <button class="time-quick" data-minutes="30">30m</button>
+            <button class="time-quick" data-minutes="120">2h</button>
+            <button class="time-quick" data-minutes="1440">1d</button>
+            <button class="time-quick active" data-minutes="2880">2d</button>
+            <button class="time-quick" data-minutes="10080">7d</button>
+            <button class="time-quick" data-minutes="43200">30d</button>
+            <button class="time-quick" data-minutes="129600">90d</button>
+          </div>
+
+          <!-- Manual entry -->
+          <div class="time-manual-row">
+            <input type="number" id="timeManualValue" class="time-manual-input" value="2" min="1" max="9999" autocomplete="off"/>
+            <div class="time-unit-pills" id="timeUnitPills">
+              <button class="time-unit-pill" data-unit="m" data-mult="1">min</button>
+              <button class="time-unit-pill" data-unit="h" data-mult="60">hr</button>
+              <button class="time-unit-pill active" data-unit="d" data-mult="1440">day</button>
+            </div>
+          </div>
+
+        </div><!-- /timeRelativeControls -->
+
+        <!-- DATE RANGE controls -->
+        <div id="timeDateControls" style="display:none">
+          <div class="time-date-range-row">
+            <div class="time-date-field">
+              <label class="time-date-label">From</label>
+              <input type="date" id="timeDateFrom" class="time-date-input"/>
+            </div>
+            <span class="time-date-arrow">→</span>
+            <div class="time-date-field">
+              <label class="time-date-label">To</label>
+              <input type="date" id="timeDateTo" class="time-date-input"/>
+            </div>
+          </div>
+          <div class="time-date-presets">
+            <button class="time-date-preset" data-days="0">Today</button>
+            <button class="time-date-preset" data-days="7">Last 7d</button>
+            <button class="time-date-preset" data-days="30">Last 30d</button>
+            <button class="time-date-preset" data-days="90">Last 90d</button>
+          </div>
+          <span class="field-hint time-date-hint">Searches the full day on each date (UTC)</span>
+        </div><!-- /timeDateControls -->
+
+      </div>
+    </div>
+
+    <!-- TOOL TOGGLE (shown for areas where both apply) -->
+    <div class="field-group tool-toggle-group" id="toolToggleGroup" style="display:none">
+      <label class="field-label">Run in</label>
+      <div class="pill-group" id="toolToggle">
+        <button class="pill active" data-value="chronosphere">Chronosphere</button>
+        <button class="pill" data-value="splunk">Splunk</button>
+        <button class="pill" data-value="both">Both</button>
+      </div>
+    </div>
+
+    <button class="diagnose-btn" id="diagnoseBtn">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.5"/>
+        <path d="M5.5 8l2 2 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Diagnose
+    </button>
+
+  </section>
+
+  <!-- RESULTS SECTION -->
+  <section class="results-section" id="resultsSection" style="display:none">
+    <div class="results-header">
+      <button class="back-btn" id="backBtn">← New diagnosis</button>
+      <span class="results-summary" id="resultsSummary"></span>
+    </div>
+    <div class="steps-list" id="stepsList"></div>
+    <div class="final-verdict" id="finalVerdict" style="display:none"></div>
+  </section>
+
+    </div><!-- /pageDiagnose -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- PAGE: ARTICLES                                              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="pageArticles">
+      <div class="articles-page">
+        <button class="page-back-btn" data-back="pageDiagnose">← Back to Diagnose</button>
+        <h2>📚 IKB Articles</h2>
+
+        <!-- Flows -->
+        <div class="articles-category">
+          <div class="articles-category-label">Flows</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417791831195" target="_blank">Troubleshooting with Splunk — Flows</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/43451713835035" target="_blank">Troubleshooting with Chronosphere — Flows (WIP)</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/45266142581147" target="_blank">Troubleshooting with Chronosphere — Flows (WIP) v2</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/37859550803227" target="_blank">Troubleshooting: Price Drop Flow</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18146365779995" target="_blank">Troubleshooting: Using Coupons in Campaigns and Flows</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/40180308161051" target="_blank">FAQ and Reference: Using Klaviyo Social Marketing to grow list</a>
+        </div>
+
+        <!-- Campaign Issues -->
+        <div class="articles-category">
+          <div class="articles-category-label">Campaign Issues</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18146365779995" target="_blank">Troubleshooting: Using Coupons in Campaigns and Flows</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18380599504027" target="_blank">Reference: Coupons</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+        <!-- List / Profile Change -->
+        <div class="articles-category">
+          <div class="articles-category-label">List / Profile Change</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/26250247031579" target="_blank">Troubleshooting with Splunk: Lists &amp; Segments, Profiles and Consent</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/39500686669083" target="_blank">Troubleshooting with Splunk: Lists &amp; Segments, Profiles and Consent (v2)</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/15501657749403" target="_blank">Reference: List Opt-In Setting Logs</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/15501697892251" target="_blank">Reference: Profile Deletion Logs</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+        <!-- Billing / Auto-upgrade -->
+        <div class="articles-category">
+          <div class="articles-category-label">Billing / Auto-upgrade</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/42626606621851" target="_blank">Troubleshooting with Splunk — Billing</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+        <!-- Form Change -->
+        <div class="articles-category">
+          <div class="articles-category-label">Form Change</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18380599504027" target="_blank">Reference: Coupons</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+        <!-- Push Consent -->
+        <div class="articles-category">
+          <div class="articles-category-label">Push Consent</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+        <!-- Reviews -->
+        <div class="articles-category">
+          <div class="articles-category-label">Reviews</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+        <!-- Integrations -->
+        <div class="articles-category">
+          <div class="articles-category-label">Integrations</div>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18327688344219" target="_blank">Troubleshooting with Splunk — Integrations</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18417359203739" target="_blank">Reference: General Troubleshooting with Splunk</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18587586575387" target="_blank">Troubleshooting with Splunk — Catalog</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/17950866906267" target="_blank">Troubleshooting with Splunk — Coupons</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/18380599504027" target="_blank">Reference: Coupons</a>
+          <a class="article-link-item" href="https://klaviyo-internal-kb.zendesk.com/hc/en-us/articles/32596635288475" target="_blank">Reference: Troubleshooting Guide Library</a>
+        </div>
+
+      </div>
+    </div><!-- /pageArticles -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- PAGE: REPORT / FEEDBACK                                     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="pageReport">
+      <div class="report-page">
+        <button class="page-back-btn" data-back="pageDiagnose">← Back to Diagnose</button>
+        <h2>🐛 Report / Feedback</h2>
+        <p>Leave a comment, report a bug, or suggest an improvement to the Klaviyo Debugger.</p>
+
+        <!-- Type -->
+        <label class="report-field-label">Type</label>
+        <div class="report-type-row">
+          <button class="report-type-btn active">🐛 Bug Report</button>
+          <button class="report-type-btn">💡 Suggestion</button>
+          <button class="report-type-btn">💬 Feedback</button>
+          <button class="report-type-btn">🙏 Other</button>
+        </div>
+
+        <!-- Subject -->
+        <label class="report-field-label" for="reportSubject">Subject <span style="color:var(--text-secondary);font-weight:400">(optional)</span></label>
+        <input class="report-subject-input" id="reportSubject" type="text" placeholder="e.g. Splunk timeout on billing step" autocomplete="off"/>
+
+        <!-- Description -->
+        <label class="report-field-label" for="reportBody">Description <span style="color:var(--red)">*</span></label>
+        <textarea class="report-textarea" id="reportBody" placeholder="Describe the issue or suggestion in as much detail as you can. Include steps to reproduce if it's a bug."></textarea>
+
+        <button class="report-submit-btn" id="reportSubmit">Send Feedback</button>
+
+        <div class="report-success" id="reportSuccess"></div>
+      </div>
+    </div><!-- /pageReport -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- PAGE: SETTINGS                                              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="pageSettings">
+      <div class="settings-page">
+        <button class="page-back-btn" data-back="pageDiagnose">← Back to Diagnose</button>
+        <h2>⚙️ Settings</h2>
+
+        <!-- Appearance -->
+        <div class="settings-section">
+          <div class="settings-section-label">Appearance</div>
+          <div class="theme-options">
+            <button class="theme-option" data-theme-value="dark">
+              <div class="theme-preview tp-dark">
+                <div class="tp-hdr"></div>
+                <div class="tp-bd">
+                  <div class="tp-ln"></div>
+                  <div class="tp-ln s"></div>
+                  <div class="tp-ln"></div>
+                </div>
+              </div>
+              <span class="theme-option-label">🌙 Dark</span>
+              <span class="theme-option-sub">Default</span>
+            </button>
+            <button class="theme-option" data-theme-value="light">
+              <div class="theme-preview tp-light">
+                <div class="tp-hdr"></div>
+                <div class="tp-bd">
+                  <div class="tp-ln"></div>
+                  <div class="tp-ln s"></div>
+                  <div class="tp-ln"></div>
+                </div>
+              </div>
+              <span class="theme-option-label">☀️ Light</span>
+              <span class="theme-option-sub">Frosted Glass</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- About -->
+        <div class="settings-section">
+          <div class="settings-section-label">About</div>
+          <div class="settings-meta">
+            <strong>Klaviyo Flow Debugger</strong><br>
+            Version 3.0.0<br>
+            Built for Klaviyo Support — diagnose flows, campaigns, lists, billing, forms, push, reviews &amp; integrations via Chronosphere and Splunk.
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /pageSettings -->
+
+  </div><!-- /content-wrapper -->
+
+</div>
+<script src="sidepanel.js"></script>
+  <!-- Hub back navigation bar -->
+  <div id="klv-hub-back" style="position:fixed;top:0;left:0;right:0;z-index:99999;height:42px;background:#FAF6EF;border-bottom:0.5px solid #E8E2D8;display:flex;align-items:center;justify-content:center;">
+    <button id="klv-hub-back-btn" style="background:none;border:none;color:#1a1a1a;cursor:pointer;font-size:13px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;gap:6px;padding:0;letter-spacing:-0.1px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#C5C0BB;">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m11 3-6 5 6 5"/></svg>
+      Back to Klaviyo support tools
+    </button>
+  </div>
+  <script src="../hub-back.js"></script>
+</body>
+</html>
