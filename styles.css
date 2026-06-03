@@ -154,7 +154,7 @@ body {
   background: var(--bg);
   min-height: 100vh;
   transition: background 0.25s ease, color 0.2s ease;
-  padding-top: 42px;
+
 }
 
 .app {

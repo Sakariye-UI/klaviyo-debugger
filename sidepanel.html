@@ -12,6 +12,14 @@
     .nav-btn { width:34px; height:34px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; transition:background .15s,opacity .15s; opacity:.42; }
     .nav-btn:hover { background:var(--border); opacity:1; }
     .nav-btn.active { background:rgba(62,207,160,.13); opacity:1; }
+    .nav-btn { position:relative; }
+    .nav-btn .nav-tt { position:absolute; left:42px; top:50%; transform:translateY(-50%); background:var(--surface); border:1px solid var(--border); color:var(--text); font-size:11px; white-space:nowrap; padding:4px 8px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .15s; z-index:100; }
+    .nav-btn:hover .nav-tt { opacity:1; }
+    .nav-spacer { flex:1; }
+    .nav-guide { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(62,207,160,.08); border:1px solid rgba(62,207,160,.3); position:relative; flex-shrink:0; }
+    .nav-guide svg { width:16px; height:16px; stroke:var(--accent,#3ECFA0); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .nav-guide .nav-tt { position:absolute; left:42px; top:50%; transform:translateY(-50%); background:var(--surface); border:1px solid var(--border); color:var(--text); font-size:11px; white-space:nowrap; padding:4px 8px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .15s; z-index:100; }
+    .nav-guide:hover .nav-tt { opacity:1; }
     .page { display:none; flex:1; overflow-y:auto; overflow-x:hidden; }
     .page.active { display:block; }
 
@@ -118,10 +126,15 @@
 
     <!-- LEFT NAV -->
     <nav class="side-nav">
-      <button class="nav-btn active" data-page="pageDiagnose" title="Diagnose">🏠</button>
-      <button class="nav-btn" data-page="pageArticles" title="KB Articles">📚</button>
-      <button class="nav-btn" data-page="pageReport" title="Report / Feedback">🐛</button>
-      <button class="nav-btn" data-page="pageSettings" title="Settings">⚙️</button>
+      <button class="nav-btn active" data-page="pageDiagnose">🏠<span class="nav-tt">Diagnose</span></button>
+      <button class="nav-btn" data-page="pageArticles">📚<span class="nav-tt">KB articles</span></button>
+      <button class="nav-btn" data-page="pageReport">🐛<span class="nav-tt">Report / feedback</span></button>
+      <button class="nav-btn" data-page="pageSettings">⚙️<span class="nav-tt">Settings</span></button>
+      <div class="nav-spacer"></div>
+      <button class="nav-guide" id="navGuideBtn" aria-label="Quick guide">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span class="nav-tt">Quick guide</span>
+      </button>
     </nav>
 
     <!-- PAGE: DIAGNOSE -->
@@ -673,13 +686,10 @@
 
 </div>
 <script src="sidepanel.js"></script>
-  <!-- Hub back navigation bar -->
-  <div id="klv-hub-back" style="position:fixed;top:0;left:0;right:0;z-index:99999;height:42px;background:#FAF6EF;border-bottom:0.5px solid #E8E2D8;display:flex;align-items:center;justify-content:center;">
-    <button id="klv-hub-back-btn" style="background:none;border:none;color:#1a1a1a;cursor:pointer;font-size:13px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;gap:6px;padding:0;letter-spacing:-0.1px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#C5C0BB;">
-      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m11 3-6 5 6 5"/></svg>
-      Back to Klaviyo support tools
-    </button>
-  </div>
-  <script src="../hub-back.js"></script>
+  <script>
+    document.getElementById('navGuideBtn').addEventListener('click', function() {
+      chrome.tabs.create({ url: 'https://docs.google.com/document/d/14KUh6yz25wasO9f9QyXdM-F2PttmFpsd3bjUBMf-QhA/edit?tab=t.0' });
+    });
+  </script>
 </body>
 </html>

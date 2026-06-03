@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Klaviyo Flow Debugger",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Diagnose why profiles didn't enter flows using Chronosphere & Splunk",
   "permissions": ["sidePanel", "tabs", "scripting", "storage"],
   "host_permissions": [
