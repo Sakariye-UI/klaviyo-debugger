@@ -177,7 +177,7 @@ async function runDiagnostic(msg, runId) {
   }
 
   if (runId !== currentRunId) return;
-  savedDiagState = null;
+  savedDiagState = { steps, timeRange: msg.timeRange, area, stepOutcomes };
   const { finalStatus, finalVerdict } = computeFinalVerdict(stepOutcomes, area);
   sendToPanel({ type: 'DONE', finalStatus, finalVerdict });
 }
@@ -292,7 +292,7 @@ async function resumeFromStep(fromIndex, runId) {
   }
 
   if (runId !== currentRunId) return;
-  savedDiagState = null;
+  savedDiagState = { steps, timeRange: msg.timeRange, area, stepOutcomes };
   const { finalStatus, finalVerdict } = computeFinalVerdict(stepOutcomes, area);
   sendToPanel({ type: 'DONE', finalStatus, finalVerdict });
 }

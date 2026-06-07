@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Klaviyo Debugger",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "Diagnose Chronosphere and Splunk calls for flows, campaigns, lists, forms, and push notifications.",
   "permissions": [
     "sidePanel",
